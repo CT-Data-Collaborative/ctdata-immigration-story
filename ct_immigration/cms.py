@@ -1,8 +1,9 @@
-import itertools
+import re
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 sn = "Migration Data Story Content"
+tooltip_regex = re.compile('\(\((.*?)\)\)\[\[(.*?)\]\]')
 
 
 def is_list(element):
@@ -10,6 +11,10 @@ def is_list(element):
         return True
     return False
 
+def is_list_item(element):
+    if element['Content Type'] == 'Bullet List Item' or element['Content Type'] == 'Ordered List Item':
+        return True
+    return False
 
 def fetch_sheet(sheet_name):
     """ 
@@ -36,24 +41,40 @@ def parse_sheet(record_list):
     :return: list of dicts
     """
     ON_LIST = False
-    content_tree = []
+    content_tree = {'section': '', 'graphic': '', 'items': []}
     current_list = {'type': '', 'list_items': []}
     for el in record_list.get_all_records():
         if is_list(el):
-            if ON_LIST == False:
-                ON_LIST = True
-                if el['Content Type'] == 'Bullet List':
-                    current_list['type'] = 'Unordered List'
-                else:
-                    current_list['type'] = 'Ordered List'
+            ON_LIST = True
+            if el['Content Type'] == 'Bullet List':
+                current_list['type'] = 'Unordered List'
             else:
-                current_list['list_items'].append(el['content'])
+                current_list['type'] = 'Ordered List'
+            try:
+                current_list['content'] = el['Content']
+            except KeyError:
+                current_list['content'] = ''
+        elif is_list_item(el):
+            current_list['list_items'].append(el['Content'])
+        elif el['Content Type'] == 'Graphic':
+            content_tree['graphic'] = el['Content']
         elif is_list(el) == False:
             if ON_LIST == True:
                 ON_LIST = False
-                content_tree.append(current_list)
+                content_tree['items'].append(current_list)
                 current_list = {'type': '', 'list_items': []}
-            content_tree.append({'type': el['Content Type'], 'content': el['Content']})
+            c = el['Content']
+            tooltips = tooltip_regex.search(c)
+            if tooltips:
+                basetext = tooltips.groups()[0]
+                tip = tooltips.groups()[1]
+                match_span = tooltips.span()
+                tip_element = "<a href='#' data-toggle='tooltip' title='{}'>{}</a>".format(tip, basetext)
+                to_replace = c[match_span[0]:match_span[1]]
+                el['Content'] = c.replace(to_replace, tip_element)
+            else:
+                el['Content'] = c
+            content_tree['items'].append({'type': el['Content Type'], 'content': el['Content']})
 
     return content_tree
 
@@ -74,7 +95,7 @@ def build_content_object(workbook):
     index = lookup['Index']
     section_order = [so['Section Order'] for so in index.get_all_records() if so['Section Order'] in lookup]
 
-    content = list(itertools.chain(*[parse_sheet(lookup[s]) for s in section_order]))
+    content = [parse_sheet(lookup[s]) for s in section_order]
     return content
 
 

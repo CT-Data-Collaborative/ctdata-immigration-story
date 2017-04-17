@@ -1,0 +1,26 @@
+{
+  "name": "ct_immigration",
+  "version": "1.0.0",
+  "description": "=============================== CT Immigration ===============================",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CT-Data-Collaborative/ctdata-immigration-story.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CT-Data-Collaborative/ctdata-immigration-story/issues"
+  },
+  "homepage": "https://github.com/CT-Data-Collaborative/ctdata-immigration-story#readme",
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "jquery": "^3.2.1"
+  }
+}

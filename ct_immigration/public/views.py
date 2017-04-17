@@ -41,11 +41,10 @@ def mng_content(cache_duration=900):
 @blueprint.route('/', methods=['GET'])
 def home():
     """Home page."""
-    content = mng_content(900)
+    content = mng_content(cache_duration=900)
     return render_template('public/home.html', content=content)
 
 @blueprint.route('/about/')
 def about():
     """About page."""
-    form = LoginForm(request.form)
-    return render_template('public/about.html', form=form)
+    return render_template('public/about.html')
